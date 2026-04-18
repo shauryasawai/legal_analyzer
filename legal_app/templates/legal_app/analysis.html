@@ -1,0 +1,118 @@
+{% extends 'legal_app/base.html' %}
+{% load static %}
+{% block title %}{{ doc.filename }} — LexAI Analysis{% endblock %}
+
+{% block content %}
+<div class="analysis-layout">
+
+  <!-- Sidebar -->
+  <aside class="analysis-sidebar">
+    <div class="sidebar-doc">
+      <span class="sidebar-icon">📄</span>
+      <div>
+        <p class="sidebar-filename">{{ doc.filename }}</p>
+        <p class="sidebar-date">{{ doc.uploaded_at|date:"M d, Y" }}</p>
+      </div>
+    </div>
+
+    <div class="risk-summary">
+      <h3>Risk Overview</h3>
+      <div class="risk-bar-wrap">
+        <div class="risk-bar">
+          {% if total > 0 %}
+          <div class="risk-seg high" style="width:{% widthratio risk_counts.high total 100 %}%"></div>
+          <div class="risk-seg medium" style="width:{% widthratio risk_counts.medium total 100 %}%"></div>
+          <div class="risk-seg low" style="width:{% widthratio risk_counts.low total 100 %}%"></div>
+          {% endif %}
+        </div>
+      </div>
+      <div class="risk-legend">
+        <span class="legend-item high">🔴 High <strong>{{ risk_counts.high }}</strong></span>
+        <span class="legend-item medium">🟡 Medium <strong>{{ risk_counts.medium }}</strong></span>
+        <span class="legend-item low">🟢 Low <strong>{{ risk_counts.low }}</strong></span>
+      </div>
+    </div>
+
+    <div class="clause-nav">
+      <h3>Clauses <span class="clause-total">{{ total }}</span></h3>
+      <div class="clause-nav-list">
+        {% for clause in clauses %}
+        <a class="clause-nav-item risk-{{ clause.risk_level }}" href="#clause-{{ clause.id }}">
+          <span class="risk-dot"></span>
+          <span>{{ clause.title }}</span>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+
+    <a href="/" class="btn-new-analysis">+ New Analysis</a>
+  </aside>
+
+  <!-- Main content -->
+  <main class="analysis-main">
+    <div class="analysis-header">
+      <h1>Document Analysis</h1>
+      <div class="filter-bar">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="high">🔴 High Risk</button>
+        <button class="filter-btn" data-filter="medium">🟡 Medium</button>
+        <button class="filter-btn" data-filter="low">🟢 Low Risk</button>
+      </div>
+    </div>
+
+    <div class="clauses-list" id="clausesList">
+      {% for clause in clauses %}
+      <article class="clause-card risk-{{ clause.risk_level }}" id="clause-{{ clause.id }}" data-risk="{{ clause.risk_level }}">
+        <div class="clause-header">
+          <div class="clause-meta">
+            <span class="clause-type-badge">{{ clause.clause_type }}</span>
+            <span class="risk-badge risk-{{ clause.risk_level }}">
+              {% if clause.risk_level == 'high' %}🔴 High Risk
+              {% elif clause.risk_level == 'medium' %}🟡 Medium Risk
+              {% else %}🟢 Low Risk{% endif %}
+            </span>
+          </div>
+          <h2 class="clause-title">{{ clause.title }}</h2>
+          {% if clause.risk_reason %}
+          <p class="risk-reason">⚠ {{ clause.risk_reason }}</p>
+          {% endif %}
+        </div>
+
+        <div class="clause-body">
+          <div class="clause-col">
+            <div class="col-label">Original Text</div>
+            <div class="clause-original">{{ clause.original_text }}</div>
+          </div>
+          <div class="clause-divider"></div>
+          <div class="clause-col">
+            <div class="col-label">Plain English</div>
+            <div class="clause-simplified">{{ clause.simplified_text }}</div>
+          </div>
+        </div>
+
+        <!-- ELI10 Section -->
+        <div class="eli5-section">
+          <button class="btn-eli5" data-clause-id="{{ clause.id }}">
+            🧒 Explain Like I'm 10
+          </button>
+          <div class="eli5-result hidden" id="eli5-{{ clause.id }}">
+            <div class="eli5-loading hidden">
+              <span class="eli5-spinner">⏳</span> Generating child-friendly explanation…
+            </div>
+            <div class="eli5-text hidden"></div>
+          </div>
+        </div>
+      </article>
+      {% empty %}
+      <div class="empty-state">
+        <p>No clauses were extracted from this document.</p>
+      </div>
+      {% endfor %}
+    </div>
+  </main>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'legal_app/js/analysis.js' %}"></script>
+{% endblock %}

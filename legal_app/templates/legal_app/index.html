@@ -1,0 +1,117 @@
+{% extends 'legal_app/base.html' %}
+{% load static %}
+{% block title %}LexAI — Upload Legal Document{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div class="hero-text">
+    <span class="hero-eyebrow">AI-Powered Legal Analysis</span>
+    <h1>Understand Every<br/><em>Clause, Risk &amp; Trap</em><br/>in Your Documents</h1>
+    <p class="hero-sub">Upload contracts, policies, or agreements. LexAI simplifies legal jargon, flags risky clauses, and explains everything in plain English — even for a 10-year-old.</p>
+    <div class="hero-features">
+      <span class="feat-pill">🔍 Clause Extraction</span>
+      <span class="feat-pill">🚨 Risk Scoring</span>
+      <span class="feat-pill">🧒 ELI10 Mode</span>
+      <span class="feat-pill">📄 PDF · DOCX · TXT</span>
+    </div>
+  </div>
+
+  <div class="upload-card" id="uploadCard">
+    <div class="upload-zone" id="dropZone">
+      <div class="upload-icon">📋</div>
+      <p class="upload-title">Drop your document here</p>
+      <p class="upload-sub">PDF, DOCX, or TXT &nbsp;·&nbsp; Max 10 MB</p>
+      <label class="btn-upload" for="fileInput">Browse File</label>
+      <input type="file" id="fileInput" accept=".pdf,.docx,.doc,.txt" hidden/>
+    </div>
+
+    <div class="file-preview hidden" id="filePreview">
+      <div class="file-info">
+        <span class="file-icon" id="fileIcon">📄</span>
+        <div>
+          <p class="file-name" id="fileName">document.pdf</p>
+          <p class="file-size" id="fileSize">2.4 MB</p>
+        </div>
+        <button class="btn-clear" id="clearFile" title="Remove">✕</button>
+      </div>
+      <button class="btn-analyze" id="analyzeBtn">
+        <span>Analyze Document</span>
+        <span class="btn-arrow">→</span>
+      </button>
+    </div>
+
+    <!-- Processing state -->
+    <div class="processing hidden" id="processingState">
+      <div class="processing-animation">
+        <div class="pulse-ring"></div>
+        <span class="processing-icon">⚖</span>
+      </div>
+      <p class="processing-title" id="processingTitle">Extracting text…</p>
+      <p class="processing-sub">This usually takes 10–30 seconds</p>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+
+    <!-- Error state -->
+    <div class="error-state hidden" id="errorState">
+      <span class="error-icon">⚠️</span>
+      <p class="error-msg" id="errorMsg">Something went wrong.</p>
+      <button class="btn-retry" id="retryBtn">Try Again</button>
+    </div>
+  </div>
+</section>
+
+{% if recent_docs %}
+<section class="recent-section">
+  <h2>Recent Analyses</h2>
+  <div class="recent-grid">
+    {% for doc in recent_docs %}
+    <a href="/analysis/{{ doc.id }}/" class="recent-card">
+      <span class="recent-icon">📄</span>
+      <div>
+        <p class="recent-name">{{ doc.filename }}</p>
+        <p class="recent-date">{{ doc.uploaded_at|date:"M d, Y" }}</p>
+      </div>
+      <span class="recent-arrow">→</span>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<section class="how-it-works">
+  <h2>How It Works</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">01</div>
+      <div class="step-icon">📤</div>
+      <h3>Upload</h3>
+      <p>Drop your PDF, DOCX, or TXT file into the analyzer</p>
+    </div>
+    <div class="step-arrow">→</div>
+    <div class="step">
+      <div class="step-num">02</div>
+      <div class="step-icon">🧠</div>
+      <h3>AI Reads</h3>
+      <p>LangChain chunks the document · Claude reads every clause</p>
+    </div>
+    <div class="step-arrow">→</div>
+    <div class="step">
+      <div class="step-num">03</div>
+      <div class="step-icon">🚨</div>
+      <h3>Risk Report</h3>
+      <p>Every clause gets a plain-English summary + risk rating</p>
+    </div>
+    <div class="step-arrow">→</div>
+    <div class="step">
+      <div class="step-num">04</div>
+      <div class="step-icon">🧒</div>
+      <h3>ELI10 Mode</h3>
+      <p>One click — complex clauses explained like you're 10</p>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'legal_app/js/upload.js' %}"></script>
+{% endblock %}
