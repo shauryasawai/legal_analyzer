@@ -19,7 +19,7 @@ legal_analyzer/
 │   ├── models.py            # DocumentAnalysis + Clause models
 │   ├── views.py             # Upload, Analysis, ELI5 endpoints
 │   ├── urls.py              # App URL routing
-│   ├── langchain_service.py # LangChain + ChromaDB + Claude pipeline
+│   ├── langchain_service.py # LangChain + ChromaDB + GPT pipeline
 │   ├── migrations/
 │   ├── templates/legal_app/
 │   │   ├── base.html
@@ -57,14 +57,12 @@ pip install -r requirements.txt
 
 > **Note:** `sentence-transformers` downloads a ~90 MB model on first run.
 
-### 3. Set your Anthropic API key
+### 3. Set your GPT API key
 
 ```bash
-# Linux/macOS
-export ANTHROPIC_API_KEY="sk-ant-..."
 
 # Windows PowerShell
-$env:ANTHROPIC_API_KEY = "sk-ant-..."
+$env:OPENAI_API_KEY = "sk-ant-..."
 ```
 
 Or add it to a `.env` file and use `python-decouple` / `django-environ`.
@@ -73,7 +71,7 @@ Or add it to a `.env` file and use `python-decouple` / `django-environ`.
 
 ```bash
 python manage.py migrate
-python manage.py collectstatic --noinput   # optional for dev
+python manage.py collectstatic --noinput
 ```
 
 ### 5. Run the development server
@@ -98,7 +96,7 @@ extract_text()          # pdfplumber / python-docx / plain text
 store_document_chunks() # LangChain RecursiveCharacterTextSplitter
     │                   # → ChromaDB (sentence-transformers embeddings)
     ▼
-analyze_document()      # Claude claude-sonnet-4-20250514
+analyze_document()      # GPT-5
     │                   # Returns JSON: title, simplified, risk, type
     ▼
 Save Clause objects     # Django ORM → SQLite
@@ -142,7 +140,7 @@ generate_eli5()         # Second Claude call per clause
 | AI Orchestration | LangChain |
 | Vector DB | ChromaDB |
 | Embeddings | sentence-transformers (all-MiniLM-L6-v2) |
-| LLM | Anthropic Claude (claude-sonnet-4) |
+| LLM | OPEN AI (GPT-5) |
 | PDF parsing | pdfplumber / PyPDF2 |
 | DOCX parsing | python-docx |
 | Frontend | HTML + CSS + Vanilla JS |
