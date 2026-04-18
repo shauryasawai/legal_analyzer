@@ -57,6 +57,7 @@ DATABASES = {
 }
 
 STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
@@ -65,5 +66,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Vector DB path
 VECTORSTORE_PATH = BASE_DIR / 'vectorstore'
 
-# Anthropic API key (set via environment variable)
-ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
+# OpenAI API key (set via environment variable)
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')

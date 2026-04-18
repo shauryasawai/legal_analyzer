@@ -81,10 +81,10 @@ def upload_document(request):
             str(settings.VECTORSTORE_PATH),
         )
 
-        # Analyze with Claude
-        api_key = settings.ANTHROPIC_API_KEY
+        # Analyze with OpenAI (replaced Claude)
+        api_key = settings.OPENAI_API_KEY   # <-- CHANGED
         if not api_key:
-            raise ValueError("ANTHROPIC_API_KEY not configured")
+            raise ValueError("OPENAI_API_KEY not configured")
 
         clauses_data = analyze_document(full_text, api_key)
 
@@ -127,7 +127,7 @@ def eli5_clause(request, clause_id):
     if clause.eli5_text:
         return JsonResponse({'eli5': clause.eli5_text})
 
-    api_key = settings.ANTHROPIC_API_KEY
+    api_key = settings.OPENAI_API_KEY   # <-- CHANGED
     if not api_key:
         return JsonResponse({'error': 'API key not configured'}, status=500)
 

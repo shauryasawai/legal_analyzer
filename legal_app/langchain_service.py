@@ -1,13 +1,12 @@
-"""
-LangChain + ChromaDB powered legal document analyzer.
-Handles: text extraction, chunking, vector storage, clause analysis.
-"""
-
 import os
 import json
 import logging
 from pathlib import Path
 from typing import Optional
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_chroma import Chroma
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_core.documents import Document as LCDoc
 
 logger = logging.getLogger(__name__)
 
@@ -69,10 +68,7 @@ def _extract_docx(file_path: str) -> str:
 def get_vectorstore(persist_dir: str):
     """Return (or create) a ChromaDB vector store with sentence-transformers."""
     try:
-        from langchain_community.vectorstores import Chroma
-        from langchain_community.embeddings import SentenceTransformerEmbeddings
-
-        embeddings = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
+        embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
         vectorstore = Chroma(
             collection_name="legal_docs",
             embedding_function=embeddings,
@@ -87,56 +83,59 @@ def get_vectorstore(persist_dir: str):
 def store_document_chunks(text: str, doc_id: str, persist_dir: str):
     """Chunk the text and store embeddings in ChromaDB."""
     try:
-        from langchain.text_splitter import RecursiveCharacterTextSplitter
-        from langchain.schema import Document as LCDoc
-
         splitter = RecursiveCharacterTextSplitter(
             chunk_size=800,
             chunk_overlap=100,
             separators=["\n\n", "\n", ". ", " "],
         )
+
         chunks = splitter.split_text(text)
+
         docs = [
             LCDoc(page_content=chunk, metadata={"doc_id": doc_id, "chunk": i})
             for i, chunk in enumerate(chunks)
         ]
 
         vs = get_vectorstore(persist_dir)
+
         if vs and docs:
             vs.add_documents(docs)
+
         return len(chunks)
+
     except Exception as e:
         logger.error(f"Chunk storage failed: {e}")
         return 0
 
 
-# ── Claude API call ────────────────────────────────────────────────────────────
+# ── OpenAI calle────────────────────────────────────────────────────────────
 
-def call_claude(system: str, user: str, api_key: str, max_tokens: int = 2000) -> str:
-    """Call Anthropic Claude API directly."""
+def call_openai(system: str, user: str, api_key: str, max_tokens: int = 2000) -> str:
+    """Call OpenAI Chat Completion API directly."""
     import urllib.request
     import json
 
     payload = json.dumps({
-        "model": "claude-sonnet-4-20250514",
+        "model": "gpt-4o",                     # you can change to "gpt-4", "gpt-3.5-turbo", etc.
         "max_tokens": max_tokens,
-        "system": system,
-        "messages": [{"role": "user", "content": user}],
+        "messages": [
+            {"role": "system", "content": system},
+            {"role": "user", "content": user}
+        ]
     }).encode()
 
     req = urllib.request.Request(
-        "https://api.anthropic.com/v1/messages",
+        "https://api.openai.com/v1/chat/completions",
         data=payload,
         headers={
             "Content-Type": "application/json",
-            "x-api-key": api_key,
-            "anthropic-version": "2023-06-01",
+            "Authorization": f"Bearer {api_key}",
         },
         method="POST",
     )
     with urllib.request.urlopen(req, timeout=60) as resp:
         data = json.loads(resp.read())
-    return data["content"][0]["text"]
+    return data["choices"][0]["message"]["content"]
 
 
 # ── Main analysis pipeline ─────────────────────────────────────────────────────
@@ -170,14 +169,14 @@ Make it fun and easy. Return only the explanation text, no JSON."""
 
 
 def analyze_document(text: str, api_key: str) -> list[dict]:
-    """Send document text to Claude and parse clause analysis."""
+    """Send document text to OpenAI and parse clause analysis."""
     # Truncate if too long (keep first ~6000 chars for the main analysis)
     truncated = text[:6000] if len(text) > 6000 else text
 
     prompt = f"Analyze this legal document and extract all clauses:\n\n{truncated}"
 
     try:
-        raw = call_claude(SYSTEM_PROMPT, prompt, api_key, max_tokens=3000)
+        raw = call_openai(SYSTEM_PROMPT, prompt, api_key, max_tokens=3000)
 
         # Clean up response
         raw = raw.strip()
@@ -200,7 +199,7 @@ def analyze_document(text: str, api_key: str) -> list[dict]:
 def generate_eli5(clause_text: str, api_key: str) -> str:
     """Generate an ELI5 explanation for a specific clause."""
     try:
-        return call_claude(
+        return call_openai(
             ELI5_SYSTEM,
             f"Explain this legal clause like I'm 10 years old:\n\n{clause_text}",
             api_key,
